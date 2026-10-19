@@ -16,8 +16,6 @@
 #
 #   Optional stream-gate ruleData (omit to disable vuln-class checks):
 #
-#     lightwell_stream: validated   # one of: validated | backport | novel
-#
 #     lightwell_build_index_artifact_type: application/vnd.lightwell.build-index.v1+json
 #       # Java:   application/vnd.redhat.gav-index-build+json
 #       # Python: application/vnd.lightwell.build-index.v1+json
@@ -92,12 +90,12 @@ deny contains result if {
 # ---------------------------------------------------------------------------
 # Vulnerability-class gate (per release stream)
 #
-# Opt-in via lightwell_stream ruleData (validated | backport | novel).
-# The referrer artifact type is configured via lightwell_build_index_artifact_type.
+# Opt-in via lightwell_build_index_artifact_type ruleData.
+# The stream is derived from the dev.lightwell.distribution-target annotation:
 #
-#   novel     : must have >=1 vuln id (LW- or CVE-)
-#   backport  : must have >=1 CVE; must have NO LW- vuln ids
-#   validated : must have NO CVE and NO LW- vuln ids
+#   novel | predisclosed → novel  : must have >=1 vuln id (LW- or CVE-)
+#   backport | remediated → backport : must have >=1 CVE; must have NO LW- vuln ids
+#   validated             → validated: must have NO vuln ids at all (clean upstream rebuild)
 # ---------------------------------------------------------------------------
 
 # METADATA
@@ -166,55 +164,27 @@ deny contains result if {
 }
 
 # METADATA
-# title: Validated excludes CVE vulnerabilities
+# title: Validated excludes all vulnerabilities
 # description: >-
-#   The validated stream is a clean upstream rebuild and must carry no CVE vuln id.
+#   The validated stream is a clean upstream rebuild and must carry no vuln ids at all,
+#   regardless of prefix.
 # custom:
-#   short_name: validated_excludes_cve
-#   failure_msg: 'validated stream must not contain CVE vuln ids: %v'
+#   short_name: validated_excludes_all_vulns
+#   failure_msg: 'validated stream must contain no vuln ids, found: %v'
 #   collections:
 #     - lightwell
 deny contains result if {
 	_stream == "validated"
-	_has_cve
-	result := metadata.result_helper(rego.metadata.chain(), [_cve_vulns])
-}
-
-# METADATA
-# title: Validated excludes novel vulnerabilities
-# description: >-
-#   The validated stream must carry no LW- vuln id.
-# custom:
-#   short_name: validated_excludes_novel
-#   failure_msg: 'validated stream must not contain novel (LW-) vuln ids: %v'
-#   collections:
-#     - lightwell
-deny contains result if {
-	_stream == "validated"
-	_has_novel
-	result := metadata.result_helper(rego.metadata.chain(), [_novel_vulns])
-}
-
-# METADATA
-# title: Stream ruleData valid
-# description: >-
-#   lightwell_stream must be one of validated | backport | novel.
-# custom:
-#   short_name: stream_rule_data_valid
-#   failure_msg: 'lightwell_stream %q is not one of validated, backport, novel'
-#   collections:
-#     - lightwell
-deny contains result if {
-	_stream_gate_enabled
-	not _stream in {"validated", "backport", "novel"}
-	result := metadata.result_helper(rego.metadata.chain(), [_stream])
+	count(_build_index_vulns) > 0
+	result := metadata.result_helper(rego.metadata.chain(), [_build_index_vulns])
 }
 
 # METADATA
 # title: Vuln-id prefix ruleData provided
 # description: >-
-#   When a stream is configured, both lightwell_novel_vuln_id_prefixes and
-#   lightwell_cve_vuln_id_prefixes must be provided.
+#   When a novel or backport stream is configured, both lightwell_novel_vuln_id_prefixes
+#   and lightwell_cve_vuln_id_prefixes must be provided. Validated stream checks for
+#   the absence of all vulns and does not require prefix lists.
 # custom:
 #   short_name: vuln_prefix_rule_data_provided
 #   failure_msg: '%s'
@@ -222,6 +192,7 @@ deny contains result if {
 #     - lightwell
 deny contains result if {
 	_stream_gate_enabled
+	_stream != "validated"
 	some e in _vuln_prefix_rule_data_errors
 	result := metadata.result_helper_with_severity(rego.metadata.chain(), [e.message], e.severity)
 }
@@ -235,9 +206,18 @@ _distribution_target_annotation := annotation if {
 	annotation := manifest.annotations["dev.lightwell.distribution-target"]
 }
 
-_stream := rule_data.get("lightwell_stream")
+# Maps the annotation value to the vuln-class gate stream name.
+_target_to_stream := {
+	"novel":       "novel",
+	"predisclosed": "novel",
+	"backport":    "backport",
+	"remediated":  "backport",
+	"validated":   "validated",
+}
 
-_stream_gate_enabled if is_string(_stream)
+_stream := _target_to_stream[_distribution_target_annotation]
+
+_stream_gate_enabled if is_string(_build_index_artifact_type)
 
 _build_index_artifact_type := rule_data.get("lightwell_build_index_artifact_type")
 
@@ -248,7 +228,9 @@ _build_index_referrers contains r if {
 
 _build_index_vulns contains v if {
 	some r in _build_index_referrers
-	doc := oci.parsed_blob_from_image(r.ref)
+	raw := oci.blob_from_image(r.ref)
+	json.is_valid(raw)
+	doc := json.unmarshal(raw)
 	some v in doc.vulns
 }
 

@@ -125,7 +125,6 @@ deny contains result if {
 #   collections:
 #     - lightwell
 deny contains result if {
-	_stream_gate_enabled
 	count(_gav_index_referrers) > 0
 	not _has_gav
 	result := metadata.result_helper(rego.metadata.chain(), [])
@@ -183,11 +182,6 @@ _name_matches(name, target) if name == target
 
 _name_matches(name, target) if endswith(name, concat("", ["/", target]))
 
-# Reuse lightwell_stream so the GAV gate stays in sync with the vuln-class gate.
-_stream := rule_data.get("lightwell_stream")
-
-_stream_gate_enabled if is_string(_stream)
-
 _gav_index_artifact_type := "application/vnd.redhat.gav-index-build+json"
 
 _gav_index_referrers contains r if {
@@ -197,7 +191,9 @@ _gav_index_referrers contains r if {
 
 _gav_index_gavs contains g if {
 	some r in _gav_index_referrers
-	doc := oci.parsed_blob_from_image(r.ref)
+	raw := oci.blob_from_image(r.ref)
+	json.is_valid(raw)
+	doc := json.unmarshal(raw)
 	some g in doc.gavs
 }
 

@@ -37,6 +37,8 @@ _mock_manifest_backport(_) := {"annotations": {"dev.lightwell.distribution-targe
 
 _mock_manifest_novel(_) := {"annotations": {"dev.lightwell.distribution-target": "novel"}}
 
+_mock_manifest_predisclosed(_) := {"annotations": {"dev.lightwell.distribution-target": "predisclosed"}}
+
 _mock_manifest_no_annotation(_) := {"annotations": {}}
 
 _mock_blob_manifest(_) := {"layers": [{"digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}]}
@@ -48,6 +50,11 @@ _mock_blob_manifest_validated(_) := {
 
 _mock_blob_manifest_novel(_) := {
 	"annotations": {"dev.lightwell.distribution-target": "novel"},
+	"layers": [{"digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}],
+}
+
+_mock_blob_manifest_predisclosed(_) := {
+	"annotations": {"dev.lightwell.distribution-target": "predisclosed"},
 	"layers": [{"digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}],
 }
 
@@ -106,7 +113,7 @@ test_annotation_rule_data_missing_denied if {
 }
 
 # ---------------------------------------------------------------------------
-# Stream gate — validated (no CVE, no LW-)
+# Stream gate — validated (zero vulns of any kind)
 # ---------------------------------------------------------------------------
 
 test_validated_accepts_clean_java if {
@@ -115,12 +122,8 @@ test_validated_accepts_clean_java if {
 		with ec.oci.image_manifest as _mock_blob_manifest_validated
 		with ec.oci.blob as _blob_clean
 		with data.rule_data_custom.lightwell_allowed_distribution_targets as _allowed_validated
-		with data.rule_data_custom.lightwell_stream as "validated"
 		with data.rule_data_custom.lightwell_build_index_artifact_type as _java_artifact_type
-		with data.rule_data_custom.lightwell_novel_vuln_id_prefixes as _novel_prefixes
-		with data.rule_data_custom.lightwell_cve_vuln_id_prefixes as _cve_prefixes
-	not _has_code(deny, "lightwell.validated_excludes_cve")
-	not _has_code(deny, "lightwell.validated_excludes_novel")
+	not _has_code(deny, "lightwell.validated_excludes_all_vulns")
 }
 
 test_validated_accepts_clean_python if {
@@ -129,12 +132,8 @@ test_validated_accepts_clean_python if {
 		with ec.oci.image_manifest as _mock_blob_manifest_validated
 		with ec.oci.blob as _blob_clean
 		with data.rule_data_custom.lightwell_allowed_distribution_targets as _allowed_validated
-		with data.rule_data_custom.lightwell_stream as "validated"
 		with data.rule_data_custom.lightwell_build_index_artifact_type as _python_artifact_type
-		with data.rule_data_custom.lightwell_novel_vuln_id_prefixes as _novel_prefixes
-		with data.rule_data_custom.lightwell_cve_vuln_id_prefixes as _cve_prefixes
-	not _has_code(deny, "lightwell.validated_excludes_cve")
-	not _has_code(deny, "lightwell.validated_excludes_novel")
+	not _has_code(deny, "lightwell.validated_excludes_all_vulns")
 }
 
 test_validated_rejects_cve if {
@@ -143,11 +142,8 @@ test_validated_rejects_cve if {
 		with ec.oci.image_manifest as _mock_blob_manifest_validated
 		with ec.oci.blob as _blob_cve
 		with data.rule_data_custom.lightwell_allowed_distribution_targets as _allowed_validated
-		with data.rule_data_custom.lightwell_stream as "validated"
 		with data.rule_data_custom.lightwell_build_index_artifact_type as _java_artifact_type
-		with data.rule_data_custom.lightwell_novel_vuln_id_prefixes as _novel_prefixes
-		with data.rule_data_custom.lightwell_cve_vuln_id_prefixes as _cve_prefixes
-	_has_code(deny, "lightwell.validated_excludes_cve")
+	_has_code(deny, "lightwell.validated_excludes_all_vulns")
 }
 
 test_validated_rejects_novel if {
@@ -156,11 +152,8 @@ test_validated_rejects_novel if {
 		with ec.oci.image_manifest as _mock_blob_manifest_validated
 		with ec.oci.blob as _blob_novel
 		with data.rule_data_custom.lightwell_allowed_distribution_targets as _allowed_validated
-		with data.rule_data_custom.lightwell_stream as "validated"
 		with data.rule_data_custom.lightwell_build_index_artifact_type as _java_artifact_type
-		with data.rule_data_custom.lightwell_novel_vuln_id_prefixes as _novel_prefixes
-		with data.rule_data_custom.lightwell_cve_vuln_id_prefixes as _cve_prefixes
-	_has_code(deny, "lightwell.validated_excludes_novel")
+	_has_code(deny, "lightwell.validated_excludes_all_vulns")
 }
 
 # ---------------------------------------------------------------------------
@@ -173,7 +166,6 @@ test_backport_accepts_cve if {
 		with ec.oci.image_manifest as _mock_blob_manifest_backport
 		with ec.oci.blob as _blob_cve
 		with data.rule_data_custom.lightwell_allowed_distribution_targets as _allowed_backport
-		with data.rule_data_custom.lightwell_stream as "backport"
 		with data.rule_data_custom.lightwell_build_index_artifact_type as _java_artifact_type
 		with data.rule_data_custom.lightwell_novel_vuln_id_prefixes as _novel_prefixes
 		with data.rule_data_custom.lightwell_cve_vuln_id_prefixes as _cve_prefixes
@@ -187,7 +179,6 @@ test_backport_rejects_novel_content if {
 		with ec.oci.image_manifest as _mock_blob_manifest_backport
 		with ec.oci.blob as _blob_mixed
 		with data.rule_data_custom.lightwell_allowed_distribution_targets as _allowed_backport
-		with data.rule_data_custom.lightwell_stream as "backport"
 		with data.rule_data_custom.lightwell_build_index_artifact_type as _java_artifact_type
 		with data.rule_data_custom.lightwell_novel_vuln_id_prefixes as _novel_prefixes
 		with data.rule_data_custom.lightwell_cve_vuln_id_prefixes as _cve_prefixes
@@ -200,7 +191,6 @@ test_backport_rejects_no_cve if {
 		with ec.oci.image_manifest as _mock_blob_manifest_backport
 		with ec.oci.blob as _blob_novel
 		with data.rule_data_custom.lightwell_allowed_distribution_targets as _allowed_backport
-		with data.rule_data_custom.lightwell_stream as "backport"
 		with data.rule_data_custom.lightwell_build_index_artifact_type as _java_artifact_type
 		with data.rule_data_custom.lightwell_novel_vuln_id_prefixes as _novel_prefixes
 		with data.rule_data_custom.lightwell_cve_vuln_id_prefixes as _cve_prefixes
@@ -217,7 +207,6 @@ test_novel_accepts_lw if {
 		with ec.oci.image_manifest as _mock_blob_manifest_novel
 		with ec.oci.blob as _blob_novel
 		with data.rule_data_custom.lightwell_allowed_distribution_targets as _allowed_novel
-		with data.rule_data_custom.lightwell_stream as "novel"
 		with data.rule_data_custom.lightwell_build_index_artifact_type as _python_artifact_type
 		with data.rule_data_custom.lightwell_novel_vuln_id_prefixes as _novel_prefixes
 		with data.rule_data_custom.lightwell_cve_vuln_id_prefixes as _cve_prefixes
@@ -230,7 +219,6 @@ test_novel_accepts_cve if {
 		with ec.oci.image_manifest as _mock_blob_manifest_novel
 		with ec.oci.blob as _blob_cve
 		with data.rule_data_custom.lightwell_allowed_distribution_targets as _allowed_novel
-		with data.rule_data_custom.lightwell_stream as "novel"
 		with data.rule_data_custom.lightwell_build_index_artifact_type as _python_artifact_type
 		with data.rule_data_custom.lightwell_novel_vuln_id_prefixes as _novel_prefixes
 		with data.rule_data_custom.lightwell_cve_vuln_id_prefixes as _cve_prefixes
@@ -243,8 +231,20 @@ test_novel_rejects_empty_vulns if {
 		with ec.oci.image_manifest as _mock_blob_manifest_novel
 		with ec.oci.blob as _blob_clean
 		with data.rule_data_custom.lightwell_allowed_distribution_targets as _allowed_novel
-		with data.rule_data_custom.lightwell_stream as "novel"
 		with data.rule_data_custom.lightwell_build_index_artifact_type as _python_artifact_type
+		with data.rule_data_custom.lightwell_novel_vuln_id_prefixes as _novel_prefixes
+		with data.rule_data_custom.lightwell_cve_vuln_id_prefixes as _cve_prefixes
+	_has_code(deny, "lightwell.novel_requires_vuln")
+}
+
+# predisclosed maps to the same novel stream rules
+test_predisclosed_maps_to_novel_stream if {
+	deny := lightwell.deny with input.image.ref as _image_ref
+		with ec.oci.image_referrers as _java_referrers
+		with ec.oci.image_manifest as _mock_blob_manifest_predisclosed
+		with ec.oci.blob as _blob_clean
+		with data.rule_data_custom.lightwell_allowed_distribution_targets as ["predisclosed", "novel"]
+		with data.rule_data_custom.lightwell_build_index_artifact_type as _java_artifact_type
 		with data.rule_data_custom.lightwell_novel_vuln_id_prefixes as _novel_prefixes
 		with data.rule_data_custom.lightwell_cve_vuln_id_prefixes as _cve_prefixes
 	_has_code(deny, "lightwell.novel_requires_vuln")
@@ -257,14 +257,14 @@ test_novel_rejects_empty_vulns if {
 test_missing_referrer_denied if {
 	deny := lightwell.deny with input.image.ref as _image_ref
 		with ec.oci.image_referrers as _mock_no_referrers
-		with data.rule_data_custom.lightwell_stream as "backport"
+		with ec.oci.image_manifest as _mock_manifest_backport
 		with data.rule_data_custom.lightwell_build_index_artifact_type as _java_artifact_type
 		with data.rule_data_custom.lightwell_novel_vuln_id_prefixes as _novel_prefixes
 		with data.rule_data_custom.lightwell_cve_vuln_id_prefixes as _cve_prefixes
 	_has_code(deny, "lightwell.build_index_referrer_present")
 }
 
-test_gate_inert_without_stream if {
+test_gate_inert_without_build_index_type if {
 	deny := lightwell.deny with input.image.ref as _image_ref
 		with ec.oci.image_referrers as _mock_no_referrers
 		with data.rule_data_custom.lightwell_allowed_distribution_targets as _allowed_validated
@@ -276,24 +276,12 @@ test_gate_inert_without_stream if {
 # Stream ruleData validation
 # ---------------------------------------------------------------------------
 
-test_invalid_stream_denied if {
-	deny := lightwell.deny with input.image.ref as _image_ref
-		with ec.oci.image_referrers as _java_referrers
-		with ec.oci.image_manifest as _mock_blob_manifest
-		with ec.oci.blob as _blob_clean
-		with data.rule_data_custom.lightwell_stream as "unknown"
-		with data.rule_data_custom.lightwell_build_index_artifact_type as _java_artifact_type
-		with data.rule_data_custom.lightwell_novel_vuln_id_prefixes as _novel_prefixes
-		with data.rule_data_custom.lightwell_cve_vuln_id_prefixes as _cve_prefixes
-	_has_code(deny, "lightwell.stream_rule_data_valid")
-}
-
 test_empty_novel_prefixes_denied if {
 	deny := lightwell.deny with input.image.ref as _image_ref
 		with ec.oci.image_referrers as _java_referrers
-		with ec.oci.image_manifest as _mock_blob_manifest
+		with ec.oci.image_manifest as _mock_blob_manifest_backport
 		with ec.oci.blob as _blob_cve
-		with data.rule_data_custom.lightwell_stream as "backport"
+		with data.rule_data_custom.lightwell_allowed_distribution_targets as _allowed_backport
 		with data.rule_data_custom.lightwell_build_index_artifact_type as _java_artifact_type
 		with data.rule_data_custom.lightwell_novel_vuln_id_prefixes as []
 		with data.rule_data_custom.lightwell_cve_vuln_id_prefixes as _cve_prefixes
@@ -303,9 +291,9 @@ test_empty_novel_prefixes_denied if {
 test_empty_cve_prefixes_denied if {
 	deny := lightwell.deny with input.image.ref as _image_ref
 		with ec.oci.image_referrers as _java_referrers
-		with ec.oci.image_manifest as _mock_blob_manifest
+		with ec.oci.image_manifest as _mock_blob_manifest_backport
 		with ec.oci.blob as _blob_cve
-		with data.rule_data_custom.lightwell_stream as "backport"
+		with data.rule_data_custom.lightwell_allowed_distribution_targets as _allowed_backport
 		with data.rule_data_custom.lightwell_build_index_artifact_type as _java_artifact_type
 		with data.rule_data_custom.lightwell_novel_vuln_id_prefixes as _novel_prefixes
 		with data.rule_data_custom.lightwell_cve_vuln_id_prefixes as []
