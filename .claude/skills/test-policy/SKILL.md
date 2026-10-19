@@ -41,6 +41,8 @@ fi
   "$REPO_ROOT/policy/lightwell/distribution_target_test.rego" \
   "$REPO_ROOT/policy/java/pnc_import.rego" \
   "$REPO_ROOT/policy/java/pnc_import_test.rego" \
+  "$REPO_ROOT/policy/python/build_index_digest.rego" \
+  "$REPO_ROOT/policy/python/build_index_digest_test.rego" \
   --verbose
 ```
 
