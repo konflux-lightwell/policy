@@ -158,7 +158,6 @@ test_gav_present_passes if {
 		with ec.oci.image_referrers as _mock_gav_referrers
 		with ec.oci.image_manifest as _mock_gav_manifest
 		with ec.oci.blob as _blob_with_gav
-		with data.rule_data_custom.lightwell_stream as "backport"
 	not _has_code(deny, "pnc_import.gav_present")
 }
 
@@ -167,16 +166,7 @@ test_gav_absent_denied if {
 		with ec.oci.image_referrers as _mock_gav_referrers
 		with ec.oci.image_manifest as _mock_gav_manifest
 		with ec.oci.blob as _blob_no_gav
-		with data.rule_data_custom.lightwell_stream as "backport"
 	_has_code(deny, "pnc_import.gav_present")
-}
-
-test_gav_gate_inert_without_stream if {
-	deny := pnc_import.deny with input.image.ref as _image_ref
-		with ec.oci.image_referrers as _mock_gav_referrers
-		with ec.oci.image_manifest as _mock_gav_manifest
-		with ec.oci.blob as _blob_no_gav
-	not _has_code(deny, "pnc_import.gav_present")
 }
 
 # ---------------------------------------------------------------------------
