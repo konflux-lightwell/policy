@@ -27,6 +27,7 @@ import data.lib.metadata
 #   failure_msg: 'BUILD_INDEX_DIGEST result not found in any pipeline task'
 #   collections:
 #     - lightwell
+#     - lightwell-python
 deny contains result if {
 	count(_build_index_digests) == 0
 	count(_pipelinerun_attestations) > 0
@@ -42,6 +43,7 @@ deny contains result if {
 #   failure_msg: 'BUILD_INDEX_DIGEST %q is not a valid sha256 digest'
 #   collections:
 #     - lightwell
+#     - lightwell-python
 deny contains result if {
 	some digest in _build_index_digests
 	not _is_valid_digest(digest)
