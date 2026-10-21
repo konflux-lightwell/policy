@@ -15,6 +15,8 @@ test: $(LIB)
 	  policy/lightwell/distribution_target_test.rego \
 	  policy/java/pnc_import.rego \
 	  policy/java/pnc_import_test.rego \
+	  policy/python/build_index_digest.rego \
+	  policy/python/build_index_digest_test.rego \
 	  --verbose
 
 .PHONY: clean-lib
