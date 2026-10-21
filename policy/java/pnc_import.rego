@@ -41,6 +41,7 @@ import data.lib.rule_data
 #     Allowed: %v
 #   collections:
 #     - lightwell
+#     - lightwell-java
 deny contains result if {
 	some source_image in _source_images
 	not _source_image_permitted(source_image)
@@ -56,6 +57,7 @@ deny contains result if {
 #   failure_msg: '%s'
 #   collections:
 #     - lightwell
+#     - lightwell-java
 deny contains result if {
 	some e in _source_registry_rule_data_errors
 	result := metadata.result_helper_with_severity(rego.metadata.chain(), [e.message], e.severity)
@@ -76,6 +78,7 @@ deny contains result if {
 #     VERIFICATION_KEY_FINGERPRINT %q is not in the allowed set. Allowed: %v
 #   collections:
 #     - lightwell
+#     - lightwell-java
 deny contains result if {
 	some fingerprint in _signing_key_fingerprints
 	not fingerprint in _allowed_signing_keys
@@ -91,6 +94,7 @@ deny contains result if {
 #   failure_msg: 'VERIFICATION_KEY_FINGERPRINT result not found in any oci-verify-import task'
 #   collections:
 #     - lightwell
+#     - lightwell-java
 deny contains result if {
 	count(_signing_key_fingerprints) == 0
 	count(_pipelinerun_attestations) > 0
@@ -106,6 +110,7 @@ deny contains result if {
 #   failure_msg: '%s'
 #   collections:
 #     - lightwell
+#     - lightwell-java
 deny contains result if {
 	some e in _signing_key_rule_data_errors
 	result := metadata.result_helper_with_severity(rego.metadata.chain(), [e.message], e.severity)
@@ -124,6 +129,7 @@ deny contains result if {
 #   failure_msg: 'the GAV index contains no GAVs'
 #   collections:
 #     - lightwell
+#     - lightwell-java
 deny contains result if {
 	count(_gav_index_referrers) > 0
 	not _has_gav

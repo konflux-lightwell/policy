@@ -49,6 +49,7 @@ import data.lib.rule_data
 #   failure_msg: 'dev.lightwell.distribution-target annotation is absent from the image manifest'
 #   collections:
 #     - lightwell
+#     - lightwell-generic
 deny contains result if {
 	manifest := ec.oci.image_manifest(input.image.ref)
 	not manifest.annotations["dev.lightwell.distribution-target"]
@@ -67,6 +68,7 @@ deny contains result if {
 #     Allowed: %v
 #   collections:
 #     - lightwell
+#     - lightwell-generic
 deny contains result if {
 	annotation := _distribution_target_annotation
 	not annotation in _allowed_distribution_targets
@@ -82,6 +84,7 @@ deny contains result if {
 #   failure_msg: '%s'
 #   collections:
 #     - lightwell
+#     - lightwell-generic
 deny contains result if {
 	some e in _distribution_target_rule_data_errors
 	result := metadata.result_helper_with_severity(rego.metadata.chain(), [e.message], e.severity)
@@ -109,6 +112,7 @@ deny contains result if {
 #     no build-index referrer (artifactType %q) is attached to the released image
 #   collections:
 #     - lightwell
+#     - lightwell-generic
 deny contains result if {
 	_stream_gate_enabled
 	count(_build_index_referrers) == 0
@@ -124,6 +128,7 @@ deny contains result if {
 #   failure_msg: 'novel stream requires at least one vuln id (LW- or CVE-), found none'
 #   collections:
 #     - lightwell
+#     - lightwell-generic
 deny contains result if {
 	_stream == "novel"
 	count(_build_index_referrers) > 0
@@ -140,6 +145,7 @@ deny contains result if {
 #   failure_msg: 'backport stream requires at least one CVE vuln id, found none'
 #   collections:
 #     - lightwell
+#     - lightwell-generic
 deny contains result if {
 	_stream == "backport"
 	count(_build_index_referrers) > 0
@@ -157,6 +163,7 @@ deny contains result if {
 #   failure_msg: 'backport stream must not contain novel (LW-) vuln ids: %v'
 #   collections:
 #     - lightwell
+#     - lightwell-generic
 deny contains result if {
 	_stream == "backport"
 	_has_novel
@@ -173,6 +180,7 @@ deny contains result if {
 #   failure_msg: 'validated stream must contain no vuln ids, found: %v'
 #   collections:
 #     - lightwell
+#     - lightwell-generic
 deny contains result if {
 	_stream == "validated"
 	count(_build_index_vulns) > 0
@@ -190,6 +198,7 @@ deny contains result if {
 #   failure_msg: '%s'
 #   collections:
 #     - lightwell
+#     - lightwell-generic
 deny contains result if {
 	_stream_gate_enabled
 	_stream != "validated"
