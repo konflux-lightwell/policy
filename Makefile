@@ -1,10 +1,14 @@
 EC ?= ~/.local/bin/ec
+# Pinned so a drift on conforma/policy main (e.g. the past
+# parsed_blob_from_image -> ec.oci.parsed_blob rename) can't silently break
+# these tests. Bump deliberately and re-run `make test` to confirm.
+CONFORMA_LIB_REF := v1.0.31
 LIB := .claude/skills/test-policy/lib/lib
 
 $(LIB):
 	mkdir -p $(LIB)
-	curl -sL https://github.com/conforma/policy/archive/refs/heads/main.tar.gz \
-	  | tar xz --strip-components=2 -C .claude/skills/test-policy/lib "policy-main/policy/lib"
+	curl -sL "https://github.com/conforma/policy/archive/refs/tags/$(CONFORMA_LIB_REF).tar.gz" \
+	  | tar xz --strip-components=2 -C .claude/skills/test-policy/lib "policy-$$(echo $(CONFORMA_LIB_REF) | sed 's/^v//')/policy/lib"
 
 .PHONY: test
 test: $(LIB)
