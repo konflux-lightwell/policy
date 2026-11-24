@@ -1,0 +1,38 @@
+name: Policy Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "policy/**"
+      - "Makefile"
+      - ".github/workflows/policy-test.yml"
+  pull_request:
+    paths:
+      - "policy/**"
+      - "Makefile"
+      - ".github/workflows/policy-test.yml"
+
+permissions:
+  contents: read
+
+env:
+  EC_VERSION: "v0.9.85"
+
+jobs:
+  policy-test:
+    name: policy-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Install ec CLI
+        run: |
+          mkdir -p ~/.local/bin
+          curl -sL "https://github.com/conforma/cli/releases/download/${EC_VERSION}/ec_linux_amd64" \
+            -o ~/.local/bin/ec
+          chmod +x ~/.local/bin/ec
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Run Rego policy tests
+        run: make test

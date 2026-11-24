@@ -21,31 +21,32 @@ curl -sL "https://github.com/conforma/cli/releases/download/${VERSION}/ec_${OS}_
 
 ## Command
 
+Just run `make test` from the repo root — it fetches the pinned `data.lib.*`
+dependency from [conforma/policy](https://github.com/conforma/policy) (version
+pinned in the Makefile's `CONFORMA_LIB_REF`, currently `v1.0.31` — not `main`,
+since `main` has drifted before, e.g. `parsed_blob_from_image` ->
+`ec.oci.parsed_blob`) and runs `ec opa test` against all rule sets. This is
+also what CI runs on every PR (`.github/workflows/policy-test.yml`).
+
+To run a single test, run the underlying command directly and add `--run
+<test_name>` before `--verbose`:
+
 ```bash
 REPO_ROOT=$(git rev-parse --show-toplevel)
 EC=~/.local/bin/ec
-LIB="$REPO_ROOT/.claude/skills/test-policy/lib"
+LIB="$REPO_ROOT/.claude/skills/test-policy/lib/lib"
 
-# Download lib once; re-run to refresh
-if [ ! -d "$LIB/lib" ]; then
-  mkdir -p "$LIB"
-  curl -sL https://github.com/conforma/policy/archive/refs/heads/main.tar.gz \
-    | tar xz --strip-components=2 -C "$LIB" "policy-main/policy/lib"
-fi
-
-# Run all tests
 "$EC" opa test \
   --ignore '*_test.rego' \
-  "$LIB/lib" \
+  "$LIB" \
   "$REPO_ROOT/policy/lightwell/distribution_target.rego" \
   "$REPO_ROOT/policy/lightwell/distribution_target_test.rego" \
   "$REPO_ROOT/policy/java/pnc_import.rego" \
   "$REPO_ROOT/policy/java/pnc_import_test.rego" \
   "$REPO_ROOT/policy/python/build_index_digest.rego" \
   "$REPO_ROOT/policy/python/build_index_digest_test.rego" \
+  --run <test_name> \
   --verbose
 ```
 
-To run a single test, add `--run <test_name>` before `--verbose`.
-
-To refresh the cached lib: `rm -rf "$(git rev-parse --show-toplevel)/.claude/skills/test-policy/lib"`
+To refresh the cached lib (e.g. after bumping `CONFORMA_LIB_REF`): `make clean-lib`
